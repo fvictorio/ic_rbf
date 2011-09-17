@@ -5,7 +5,12 @@
 using namespace std;
 
 float neurona_rbf::calcular (vector<float> & entrada) {
-    return float(42);
+    float dist;
+    vector<float> dist_vec;
+
+    dist_vec = restar_vectores(entrada, centroid);
+    dist = norma2(dist_vec);
+    return gaussian(dist);
 }
 
 bool neurona_rbf::set_centroid (vector<float> & new_centroid) {
@@ -18,6 +23,13 @@ bool neurona_rbf::set_centroid (vector<float> & new_centroid) {
     return true;
 }
 
-float gaussian (float x) {
+float neurona_rbf::gaussian (float x) {
     return exp(-((x*x)/(2*varianza)));
+}
+    
+float neurona_rbf::distancia2(vector<float> & punto) {
+    vector<float> dist_vec;
+
+    dist_vec = restar_vectores(centroid, punto);
+    return norma2(dist_vec);
 }

@@ -5,24 +5,46 @@
 
 using namespace std;
 
-RBF::RBF (int neuronas_capa_gaussiana, int neuronas_capa_salida, int n_entradas) {
-    capa_gaussiana.resize(neuronas_capa_gaussiana); //TODO inicializar neurona, segundo argumento
-    capa_salida.resize(neuronas_capa_salida);
+RBF::RBF (int neuronas_capa_gaussiana, int neuronas_capa_salida, int n_entradas, float eta) {
+    capa_gaussiana.resize(neuronas_capa_gaussiana); 
+    capa_salida.resize(
+            neuronas_capa_salida, 
+            neurona(neuronas_capa_gaussiana, eta) // inicializacion de la neurona
+    );
     ncg = neuronas_capa_gaussiana;
     ncs = neuronas_capa_salida;
     entradas = n_entradas;
+
+    // Inicializar los pesos de las neuronas de salida
+    for (int i = 0; i < neuronas_capa_salida; i++) {
+        capa_salida[i].inicializar();
+    }
 }
 
-vector<float> RBF::calcular_salida (vector<float> & entrada) {
-    vector<float> intermedio(ncg), salida(ncs);
+vector<float> RBF::calcular_intermedio (vector<float> & entrada) {
+    vector<float> intermedio(ncg+1);
 
     for (int i = 0; i < ncg; i++) {
         intermedio[i] = capa_gaussiana[i].calcular(entrada);
     }
+    intermedio[ncg] = 1; // entrada aumentada
+    return intermedio;
+}
+
+vector<float> RBF::calcular_salida_con_intermedio (vector<float> & intermedio) {
+    vector<float> salida(ncs);
+
     for (int i = 0; i < ncs; i++) {
-        salida[i] = capa_salida.calcular(intermedio);
+        salida[i] = capa_salida[i].calcular(intermedio);
     }
 
+    return salida;
+}
+
+vector<float> RBF::calcular_salida (vector<float> & entrada) {
+    vector<float> salida;
+    salida = calcular_intermedio(entrada);
+    salida = calcular_salida_con_intermedio(salida);
     return salida;
 }
 
@@ -31,8 +53,8 @@ void RBF::read (const char *filename) {
 
     fstream file (filename, fstream::in);    
     file >> n;
-    input.resize(n, vector(entradas));
-    result.resize(n, vector(ncs));
+    input.resize(n, vector<float>(entradas));
+    result.resize(n, vector<float>(ncs));
 
 	for(int K=0; K<n; ++K){
 		for(int L=0; L<entradas; ++L){
@@ -82,21 +104,22 @@ void RBF::entrenar_capa_gaussiana () {
     //TODO varianza
 }
 
-int entrenar_capa_salida (int cant_epocas, float acierto_minimo) {
-    vector<float> salida_obtenida;
-    int epoca;
+int RBF::entrenar_capa_salida (int cant_epocas, float acierto_minimo) {
+    vector<float> intermedio, salida_obtenida;
+    int epoca, aciertos;
 
     for (epoca = 1; epoca <= cant_epocas; epoca++) {
         aciertos = 0;
 
         for (int i = 0; i < input.size(); i++) { // por cada patron de entrenamiento
-            salida_obtenida = calcular_salida(input[i]);
+            intermedio = calcular_intermedio(input[i]);
+            salida_obtenida = calcular_salida_con_intermedio(intermedio);
             if (comparar_vectores(salida_obtenida, result[i])) { // si acierta
                 aciertos++;
             } 
             else { // si no son iguales, entreno las neuronas
-                for (j = 0; j < ncs; j++) {
-                    capa_salida[j].entrenar(salida_obtenida, result[i]);
+                for (int j = 0; j < ncs; j++) {
+                    capa_salida[j].entrenar(intermedio, result[i][j] - salida_obtenida[j]);
                 }
             }
         }
@@ -111,4 +134,21 @@ int entrenar_capa_salida (int cant_epocas, float acierto_minimo) {
     else {
         return -1;
     }
+}
+
+int RBF::centroide_mas_cerca (vector<float> & punto) {
+    int i_min = 0;
+    float dist_min, dist;
+
+    dist_min = capa_gaussiana[0].distancia2(punto);
+
+    for (int i = 1; i < ncg; i++) {
+        dist = capa_gaussiana[i].distancia2(punto);
+        if (dist < dist_min) {
+            dist_min = dist;
+            i_min = i;
+        }
+    }
+
+    return i_min;
 }

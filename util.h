@@ -1,6 +1,7 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#include <vector>
 
 using namespace std;
 
@@ -8,10 +9,19 @@ int randomize (int lower, int upper);
 
 bool comparar_vectores (vector<float> & a, vector<float> & b);
 
-void sumar_vectores (vector<float> & a, vector<float> & b);
+vector<float> sumar_vectores (vector<float> & a, vector<float> & b);
 
-void restar_vectores (vector<float> & a, vector<float> & b);
+vector<float> restar_vectores (vector<float> & a, vector<float> & b);
 
-void dividir_vector (vector<float> & a, float divisor);
+float multiplicar_vectores (vector<float> & a, vector<float> & b);
+
+vector<float> dividir_vector (vector<float> & a, float divisor);
+
+float norma2 (vector<float> & a);
+
+int signo (float a) {
+    if (a > 0) return 1;
+    else       return -1;
+}
 
 #endif
